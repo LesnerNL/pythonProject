@@ -1,10 +1,10 @@
- import requests
+import telebot
 import random
-import time
 
 # Вставьте ваш токен здесь
 API_TOKEN = '7329757611:AAF1k6NAxHS27mrg5cnYlIuFWmgHMwFvg1k'
-BASE_URL = f'https://api.telegram.org/bot{API_TOKEN}/'
+
+bot = telebot.TeleBot(API_TOKEN)
 
 clubs_name = [
     "Бавария Мюнхен (Германия)", "Реал Мадрид (Испания)", "Ливерпуль (Англия)", "Манчестер Сити (Англия)",
@@ -30,38 +30,14 @@ clubs_name = [
     "Насьонал Фуншал (Португалия)", "Риу Аве (Португалия)", "Витория Сетубал (Португалия)", "Арока (Португалия)", "Жил Висенте (Португалия)"
 ]
 
-def send_message(chat_id, text):
-    url = BASE_URL + 'sendMessage'
-    data = {'chat_id': chat_id, 'text': text}
-    response = requests.post(url, json=data)
-    return response.json()
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, 'Привет! Я бот, который выдаёт случайное число от 1 до 100 и соответствующий клуб. Напиши /random, чтобы получить число и клуб.')
 
-def handle_update(update):
-    chat_id = update['message']['chat']['id']
-    text = update['message']['text']
+@bot.message_handler(commands=['random'])
+def send_random_number(message):
+    number = random.randint(1, 100)
+    club = clubs_name[number - 1]
+    bot.reply_to(message, f'Ваше случайное число: {number}\nСоответствующий клуб: {club}')
 
-    if text == '/start':
-        send_message(chat_id, 'Привет! Я бот, который выдаёт случайное число от 1 до 100 и соответствующий клуб. Напиши /random, чтобы получить число и клуб.')
-    elif text == '/random':
-        number = random.randint(1, 100)
-        club = clubs_name[number - 1]
-        send_message(chat_id, f'Ваше случайное число: {number}\nСоответствующий клуб: {club}')
-
-def get_updates(offset=None):
-    url = BASE_URL + 'getUpdates'
-    params = {'offset': offset} if offset else {}
-    response = requests.get(url, params=params)
-    return response.json()
-
-def main():
-    offset = None
-    while True:
-        updates = get_updates(offset)
-        if updates['ok'] and updates['result']:
-            for update in updates['result']:
-                handle_update(update)
-                offset = update['update_id'] + 1
-        time.sleep(1)
-
-if __name__ == '__main__':
-    main()"updated_text_here" 
+bot.polling()
